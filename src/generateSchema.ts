@@ -1,10 +1,37 @@
 // src/generateSchema.ts
 import { writeFileSync } from 'fs';
-import { UserModel } from './models/user';
+import path from "path";
+import {readdirSync} from "node:fs";
+
+const getModels = () => {
+    const modelsDir = path.join(__dirname, './models');
+    const modelFiles = readdirSync(modelsDir);
+
+
+    let modelsContent = '';
+
+    modelFiles.forEach((file) => {
+        if(file.endsWith('.ts')){
+            const filePath = path.join(modelsDir, file);
+
+            const modelModule = require(filePath);
+
+            if (modelModule.default) {
+                modelsContent += modelModule.default + '\n';
+            } else if (modelModule.Model) {
+                modelsContent += modelModule.Model + '\n';
+            }
+        }
+    })
+
+    return modelsContent;
+}
+
+const provider = process.env.DB_TYPE || 'mysql';
 
 const schemaContent = `
 datasource db {
-  provider = "postgresql"
+  provider = "${provider}"
   url      = env("DATABASE_URL")
 }
 
@@ -12,7 +39,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-${UserModel}
+${getModels()}
 `;
 
 writeFileSync('prisma/schema.prisma', schemaContent);
