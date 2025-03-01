@@ -1,4 +1,7 @@
 import 'reflect-metadata';
+import {asyncHandler} from "../middleware/asyncHandler";
+import {NextFunction} from "express";
+import express from 'express';
 
 interface RouteMetadata {
     method: string;
@@ -14,9 +17,13 @@ export function Route(method: string, path: string) {
         const existingRoutes: RouteMetadata[] = Reflect.getMetadata(ROUTE_METADATA_KEY, target.constructor) || [];
         const originalMethod = descriptor.value;
 
-        descriptor.value = function (...args: any[]) {
-            return originalMethod.apply(this, args);
-        };
+        descriptor.value = asyncHandler(async (req: Request, res: express.Response, next: NextFunction) => {
+            const result = await originalMethod.call(target, req, res, next);
+
+            if (result !== undefined) {
+                res.json(result);
+            }
+        });
 
         existingRoutes.push({
             method,
