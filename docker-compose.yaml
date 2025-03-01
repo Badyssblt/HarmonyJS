@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    image: node:22
+    container_name: harmony
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:latest
+    container_name: harmony_mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: harmony # Changez ce mot de passe en production
+      MYSQL_DATABASE: harmony # Nom de la base de données par défaut
+      MYSQL_USER: harmony
+      MYSQL_PASSWORD: harmony # Changez le mot de passe
+    ports:
+      - "3306:3306" # Port de MariaDB, ajustez si nécessaire
+    volumes:
+      - db_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: harmony_phpmyadmin
+    environment:
+      PMA_HOST: db # Connexion automatique à MariaDB
+      PMA_USER: harmony # Utilisateur pour se connecter à MariaDB
+      PMA_PASSWORD: harmony # Mot de passe de l'utilisateur
+      PMA_PORT: 3306
+    ports:
+      - "8080:80" # Expose phpMyAdmin sur le port 8080 de votre machine
+    depends_on:
+      - db
+
+volumes:
+  db_data:
+    driver: local
