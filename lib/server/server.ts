@@ -4,9 +4,8 @@ import path from 'path';
 import 'reflect-metadata';
 import {Route} from "../core/type/Route";
 import {ROUTE_METADATA_KEY} from "../decorators/route";
-import ErrorType from "../types/ErrorType";
 import {globalErrorHandler} from "../middleware/errorHandler";
-import {AppError} from "../errors/AppError";
+import BaseController from "../core/BaseController";
 
 
 const app = express();
@@ -58,14 +57,17 @@ function registerRoutes(controllerModule: any) {
 
                 app[method](route.path, async (req: Request, res: Response, next: NextFunction) => {
                     try {
+                        BaseController.setRequest(req);
+
                         const instance = new controllerModule.default();
-                        const result = await instance[methodName](req, res, next);
+
+                        const result = await instance[methodName].call(instance, req, res, next);
 
                         if (result !== undefined) {
                             res.json(result);
                         }
                     } catch (err) {
-                        console.log("Erreur:", err)
+                        console.error("Erreur:", err);
                         next(err);
                     }
                 });
